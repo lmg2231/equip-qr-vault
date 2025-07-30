@@ -14,7 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      gearboxes: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          reduction_ratio: string
+          serial_number: string
+          shaft_diameter: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location: string
+          reduction_ratio: string
+          serial_number: string
+          shaft_diameter: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          reduction_ratio?: string
+          serial_number?: string
+          shaft_diameter?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      motors: {
+        Row: {
+          created_at: string
+          hp: number
+          id: string
+          location: string
+          rpm: number
+          serial_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hp: number
+          id?: string
+          location: string
+          rpm: number
+          serial_number: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hp?: number
+          id?: string
+          location?: string
+          rpm?: number
+          serial_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pumps: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          rpm: number
+          serial_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location: string
+          rpm: number
+          serial_number: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          rpm?: number
+          serial_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
