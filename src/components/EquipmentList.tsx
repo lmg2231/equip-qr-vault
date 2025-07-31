@@ -33,16 +33,6 @@ export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }:
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-  equipment.forEach((item) => {
-    if (!item.qr_code) {
-      console.log("Auto-generating QR for", item.serial_number);
-      handleGenerateQR(item);
-    }
-  });
-}, [equipment]);
-
-
   const handleGenerateQR = async (item: Equipment) => {
     try {
       let qrCodeData = item.qr_code;
