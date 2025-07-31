@@ -25,9 +25,10 @@ interface EquipmentListProps {
   equipment: Equipment[];
   type: "motors" | "gearboxes" | "pumps";
   onUpdate: () => void;
+  isFiltered?: boolean;
 }
 
-export const EquipmentList = ({ equipment, type, onUpdate }: EquipmentListProps) => {
+export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }: EquipmentListProps) => {
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const { toast } = useToast();
@@ -127,8 +128,17 @@ export const EquipmentList = ({ equipment, type, onUpdate }: EquipmentListProps)
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <div className="text-muted-foreground text-center">
-            <h3 className="font-medium mb-2">No {type} found</h3>
-            <p className="text-sm">Add your first {type.slice(0, -1)} to get started</p>
+            {isFiltered ? (
+              <>
+                <h3 className="font-medium mb-2">No results found</h3>
+                <p className="text-sm">Try adjusting your filters to see more results</p>
+              </>
+            ) : (
+              <>
+                <h3 className="font-medium mb-2">No {type} found</h3>
+                <p className="text-sm">Add your first {type.slice(0, -1)} to get started</p>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

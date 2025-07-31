@@ -14,6 +14,7 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [equipmentType, setEquipmentType] = useState<"motors" | "gearboxes" | "pumps">("motors");
+  const [isFiltered, setIsFiltered] = useState(false);
   const [filteredMotors, setFilteredMotors] = useState<any[]>([]);
   const [filteredGearboxes, setFilteredGearboxes] = useState<any[]>([]);
   const [filteredPumps, setFilteredPumps] = useState<any[]>([]);
@@ -150,36 +151,51 @@ const Index = () => {
           <TabsContent value="motors" className="mt-6">
             <EquipmentFilters 
               equipment={filterEquipment(motors)} 
-              onFilterChange={setFilteredMotors}
+              onFilterChange={(filtered) => {
+                const allMotors = filterEquipment(motors);
+                setIsFiltered(filtered.length < allMotors.length);
+                setFilteredMotors(filtered);
+              }}
             />
             <EquipmentList 
               equipment={filteredMotors.length > 0 ? filterEquipment(filteredMotors) : filterEquipment(motors)} 
               type="motors"
               onUpdate={handleRefetch}
+              isFiltered={isFiltered && filteredMotors.length === 0}
             />
           </TabsContent>
           
           <TabsContent value="gearboxes" className="mt-6">
             <EquipmentFilters 
               equipment={filterEquipment(gearboxes)} 
-              onFilterChange={setFilteredGearboxes}
+              onFilterChange={(filtered) => {
+                const allGearboxes = filterEquipment(gearboxes);
+                setIsFiltered(filtered.length < allGearboxes.length);
+                setFilteredGearboxes(filtered);
+              }}
             />
             <EquipmentList 
               equipment={filteredGearboxes.length > 0 ? filterEquipment(filteredGearboxes) : filterEquipment(gearboxes)} 
               type="gearboxes"
               onUpdate={handleRefetch}
+              isFiltered={isFiltered && filteredGearboxes.length === 0}
             />
           </TabsContent>
           
           <TabsContent value="pumps" className="mt-6">
             <EquipmentFilters 
               equipment={filterEquipment(pumps)} 
-              onFilterChange={setFilteredPumps}
+              onFilterChange={(filtered) => {
+                const allPumps = filterEquipment(pumps);
+                setIsFiltered(filtered.length < allPumps.length);
+                setFilteredPumps(filtered);
+              }}
             />
             <EquipmentList 
               equipment={filteredPumps.length > 0 ? filterEquipment(filteredPumps) : filterEquipment(pumps)} 
               type="pumps"
               onUpdate={handleRefetch}
+              isFiltered={isFiltered && filteredPumps.length === 0}
             />
           </TabsContent>
         </Tabs>
