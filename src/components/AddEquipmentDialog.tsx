@@ -51,8 +51,12 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
         type: equipmentType
       };
       data.qr_code = await QRCode.toDataURL(JSON.stringify(qrPayload));
+      console.log("Generated QR:", data.qr_code);
+      console.log("Final insert payload:", data);
 
-      const { error } = await supabase.from(equipmentType).insert([data]);
+      const { error, data: response } = await supabase.from(equipmentType).insert([data]);
+      console.log("Insert response:", response);
+
 
       if (error) throw error;
 
