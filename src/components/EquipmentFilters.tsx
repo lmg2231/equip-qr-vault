@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -31,14 +31,17 @@ export const EquipmentFilters = ({ equipment, onFilterChange }: EquipmentFilters
   const applyFilters = () => {
     let filtered = equipment;
 
+    // Apply location filter (AND logic - item must be in one of selected locations)
     if (selectedLocations.length > 0) {
       filtered = filtered.filter(item => selectedLocations.includes(item.location));
     }
 
+    // Apply HP filter (AND logic - item must have one of selected HP values)
     if (selectedHp.length > 0) {
       filtered = filtered.filter(item => item.hp && selectedHp.includes(item.hp));
     }
 
+    // Apply RPM filter (AND logic - item must have one of selected RPM values)
     if (selectedRpm.length > 0) {
       filtered = filtered.filter(item => item.rpm && selectedRpm.includes(item.rpm));
     }
@@ -46,11 +49,15 @@ export const EquipmentFilters = ({ equipment, onFilterChange }: EquipmentFilters
     onFilterChange(filtered);
   };
 
+  // Automatically apply filters when selections change
+  useEffect(() => {
+    applyFilters();
+  }, [selectedLocations, selectedHp, selectedRpm, equipment]);
+
   const clearFilters = () => {
     setSelectedLocations([]);
     setSelectedHp([]);
     setSelectedRpm([]);
-    onFilterChange(equipment);
   };
 
   const handleLocationChange = (location: string, checked: boolean) => {
@@ -157,9 +164,6 @@ export const EquipmentFilters = ({ equipment, onFilterChange }: EquipmentFilters
             </div>
 
             <div className="flex gap-2 mt-4">
-              <Button onClick={applyFilters} size="sm">
-                Apply Filters
-              </Button>
               <Button onClick={clearFilters} variant="outline" size="sm">
                 Clear All
               </Button>
