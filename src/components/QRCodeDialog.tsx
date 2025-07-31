@@ -13,6 +13,7 @@ interface Equipment {
   rpm?: number;
   reduction_ratio?: string;
   shaft_diameter?: number;
+  qr_code?: string;
 }
 
 interface QRCodeDialogProps {
@@ -32,14 +33,29 @@ export const QRCodeDialog = ({ open, onOpenChange, equipment, type }: QRCodeDial
       const url = `${window.location.origin}/equipment/${type}/${equipment.id}`;
       setQrUrl(url);
       
-      QRCode.toCanvas(canvasRef.current, url, {
-        width: 300,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
-      });
+      if (equipment.qr_code) {
+        // Use stored QR code
+        const img = new Image();
+        img.onload = () => {
+          const ctx = canvasRef.current?.getContext('2d');
+          if (ctx) {
+            canvasRef.current!.width = 300;
+            canvasRef.current!.height = 300;
+            ctx.drawImage(img, 0, 0, 300, 300);
+          }
+        };
+        img.src = equipment.qr_code;
+      } else {
+        // Generate new QR code
+        QRCode.toCanvas(canvasRef.current, url, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+      }
     }
   }, [equipment, type]);
 

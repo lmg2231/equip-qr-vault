@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           id: string
           location: string
+          qr_code: string | null
           reduction_ratio: string
           serial_number: string
           shaft_diameter: number
@@ -28,6 +29,7 @@ export type Database = {
           created_at?: string
           id?: string
           location: string
+          qr_code?: string | null
           reduction_ratio: string
           serial_number: string
           shaft_diameter: number
@@ -37,6 +39,7 @@ export type Database = {
           created_at?: string
           id?: string
           location?: string
+          qr_code?: string | null
           reduction_ratio?: string
           serial_number?: string
           shaft_diameter?: number
@@ -50,6 +53,7 @@ export type Database = {
           hp: number
           id: string
           location: string
+          qr_code: string | null
           rpm: number
           serial_number: string
           updated_at: string
@@ -59,6 +63,7 @@ export type Database = {
           hp: number
           id?: string
           location: string
+          qr_code?: string | null
           rpm: number
           serial_number: string
           updated_at?: string
@@ -68,6 +73,7 @@ export type Database = {
           hp?: number
           id?: string
           location?: string
+          qr_code?: string | null
           rpm?: number
           serial_number?: string
           updated_at?: string
@@ -79,6 +85,7 @@ export type Database = {
           created_at: string
           id: string
           location: string
+          qr_code: string | null
           rpm: number
           serial_number: string
           updated_at: string
@@ -87,6 +94,7 @@ export type Database = {
           created_at?: string
           id?: string
           location: string
+          qr_code?: string | null
           rpm: number
           serial_number: string
           updated_at?: string
@@ -95,6 +103,7 @@ export type Database = {
           created_at?: string
           id?: string
           location?: string
+          qr_code?: string | null
           rpm?: number
           serial_number?: string
           updated_at?: string

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import QRCode from "qrcode";
 
 interface Equipment {
   id: string;
@@ -17,6 +18,7 @@ interface Equipment {
   rpm?: number;
   reduction_ratio?: string;
   shaft_diameter?: number;
+  qr_code?: string;
 }
 
 interface EquipmentListProps {
@@ -30,9 +32,45 @@ export const EquipmentList = ({ equipment, type, onUpdate }: EquipmentListProps)
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const { toast } = useToast();
 
-  const handleGenerateQR = (item: Equipment) => {
-    setSelectedEquipment(item);
-    setQrDialogOpen(true);
+  const handleGenerateQR = async (item: Equipment) => {
+    try {
+      let qrCodeData = item.qr_code;
+      
+      if (!qrCodeData) {
+        // Generate QR code if it doesn't exist
+        const url = `${window.location.origin}/equipment/${type}/${item.id}`;
+        qrCodeData = await QRCode.toDataURL(url, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        
+        // Save QR code to database
+        const { error } = await supabase
+          .from(type)
+          .update({ qr_code: qrCodeData })
+          .eq('id', item.id);
+          
+        if (error) {
+          console.error('Error saving QR code:', error);
+        } else {
+          item.qr_code = qrCodeData;
+        }
+      }
+      
+      setSelectedEquipment(item);
+      setQrDialogOpen(true);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate QR code",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewDetails = (item: Equipment) => {
@@ -106,7 +144,7 @@ export const EquipmentList = ({ equipment, type, onUpdate }: EquipmentListProps)
               <div className="flex justify-between items-start">
                 <div>
                   <CardTitle className="text-lg">{item.serial_number}</CardTitle>
-                  <CardDescription className="mt-1">
+                  <CardDescription className="mt-1 flex flex-col gap-1">
                     <Badge variant="secondary">{item.location}</Badge>
                   </CardDescription>
                 </div>
@@ -133,27 +171,29 @@ export const EquipmentList = ({ equipment, type, onUpdate }: EquipmentListProps)
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="outline">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete {item.serial_number}? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(item)}>
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  {type !== "motors" && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete {item.serial_number}? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(item)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
               </div>
             </CardContent>

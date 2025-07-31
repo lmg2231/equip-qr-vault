@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Search, Plus, Cog, Wrench, Settings } from "lucide-react";
 import { AddEquipmentDialog } from "@/components/AddEquipmentDialog";
 import { EquipmentList } from "@/components/EquipmentList";
+import { EquipmentFilters } from "@/components/EquipmentFilters";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,6 +14,9 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [equipmentType, setEquipmentType] = useState<"motors" | "gearboxes" | "pumps">("motors");
+  const [filteredMotors, setFilteredMotors] = useState<any[]>([]);
+  const [filteredGearboxes, setFilteredGearboxes] = useState<any[]>([]);
+  const [filteredPumps, setFilteredPumps] = useState<any[]>([]);
 
   // Fetch equipment data
   const { data: motors = [], refetch: refetchMotors } = useQuery({
@@ -71,8 +75,7 @@ const Index = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground">Equipment QR Manager</h1>
-            <p className="text-muted-foreground mt-2">Manage motors, gearboxes, and pumps with QR codes</p>
+            <h1 className="text-4xl font-bold text-foreground">Equipment Manager</h1>
           </div>
           <Button onClick={handleAddEquipment} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
@@ -145,24 +148,36 @@ const Index = () => {
           </TabsList>
           
           <TabsContent value="motors" className="mt-6">
-            <EquipmentList 
+            <EquipmentFilters 
               equipment={filterEquipment(motors)} 
+              onFilterChange={setFilteredMotors}
+            />
+            <EquipmentList 
+              equipment={filteredMotors.length > 0 ? filterEquipment(filteredMotors) : filterEquipment(motors)} 
               type="motors"
               onUpdate={handleRefetch}
             />
           </TabsContent>
           
           <TabsContent value="gearboxes" className="mt-6">
-            <EquipmentList 
+            <EquipmentFilters 
               equipment={filterEquipment(gearboxes)} 
+              onFilterChange={setFilteredGearboxes}
+            />
+            <EquipmentList 
+              equipment={filteredGearboxes.length > 0 ? filterEquipment(filteredGearboxes) : filterEquipment(gearboxes)} 
               type="gearboxes"
               onUpdate={handleRefetch}
             />
           </TabsContent>
           
           <TabsContent value="pumps" className="mt-6">
-            <EquipmentList 
+            <EquipmentFilters 
               equipment={filterEquipment(pumps)} 
+              onFilterChange={setFilteredPumps}
+            />
+            <EquipmentList 
+              equipment={filteredPumps.length > 0 ? filterEquipment(filteredPumps) : filterEquipment(pumps)} 
               type="pumps"
               onUpdate={handleRefetch}
             />
