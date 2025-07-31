@@ -163,11 +163,14 @@ export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }:
             <CardContent>
               <div className="space-y-4">
                 {getSpecifications(item)}
-               <img
-                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAAAXNSR0IArs4c6QAAAERlWElm..."
-                  alt="Test QR"
+               {item.qr_code && (
+                <img
+                  src={item.qr_code}
+                  alt="QR Code"
                   className="w-36 h-36 object-contain border rounded"
-                />
+                  />
+                )}
+
 
                 
                 <div className="flex gap-2">
