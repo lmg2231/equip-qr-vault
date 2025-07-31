@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import QRCode from "qrcode";
 
 interface AddEquipmentDialogProps {
   open: boolean;
@@ -45,6 +46,11 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
       } else if (equipmentType === "pumps") {
         data.rpm = parseInt(formData.rpm);
       }
+      const qrPayload = {
+        ...data,
+        type: equipmentType
+      };
+      data.qr_code = await QRCode.toDataURL(JSON.stringify(qrPayload));
 
       const { error } = await supabase.from(equipmentType).insert([data]);
 
