@@ -149,6 +149,7 @@ export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }:
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {equipment.map((item) => (
+        console.log("QR for", item.serial_number, "=>", item.qr_code);
           <Card key={item.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex justify-between items-start">
