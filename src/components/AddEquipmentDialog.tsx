@@ -268,4 +268,4 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
       </DialogContent>
     </Dialog>
   );
-};
+}
