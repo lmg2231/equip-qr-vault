@@ -45,13 +45,13 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
         data.shaft_diameter = parseFloat(formData.shaft_diameter);
       } else if (equipmentType === "pumps") {
         const dataToInsert = {
-  serial_number: formData.serial_number,
-  location: formData.location,
-  hp: parseInt(formData.hp),
-  rpm: parseInt(formData.rpm),
-  type: equipmentType,
-  qr_code: qrImageData,
-};
+          serial_number: formData.serial_number,
+          location: formData.location,
+          hp: parseInt(formData.hp),
+          rpm: parseInt(formData.rpm),
+          type: equipmentType,
+          qr_code: qrImageData,
+      };
 
       console.log("Final insert payload:", data);
 
