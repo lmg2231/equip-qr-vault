@@ -33,21 +33,38 @@ export const QRCodeDialog = ({ open, onOpenChange, equipment, type }: QRCodeDial
       const url = `${window.location.origin}/equipment/${type}/${equipment.id}`;
       setQrUrl(url);
       
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) return;
+      
+      // Set canvas size
+      canvas.width = 300;
+      canvas.height = 300;
+      
       if (equipment.qr_code) {
-        // Use stored QR code
+        // Use stored QR code (data URL)
         const img = new Image();
         img.onload = () => {
-          const ctx = canvasRef.current?.getContext('2d');
-          if (ctx) {
-            canvasRef.current!.width = 300;
-            canvasRef.current!.height = 300;
-            ctx.drawImage(img, 0, 0, 300, 300);
-          }
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, 300, 300);
+        };
+        img.onerror = () => {
+          console.error('Failed to load stored QR code, generating new one');
+          // Fallback to generating new QR code
+          QRCode.toCanvas(canvas, url, {
+            width: 300,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#FFFFFF'
+            }
+          });
         };
         img.src = equipment.qr_code;
       } else {
         // Generate new QR code
-        QRCode.toCanvas(canvasRef.current, url, {
+        QRCode.toCanvas(canvas, url, {
           width: 300,
           margin: 2,
           color: {
