@@ -46,11 +46,9 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
       } else if (equipmentType === "pumps") {
         data.rpm = parseInt(formData.rpm);
       }
-          const qrPayload = {
-          ...data,
-          type: equipmentType
-      };
-          data.qr_code = await QRCode.toDataURL(JSON.stringify(qrPayload));
+         const qrUrl = `${window.location.origin}/equipment/${equipmentType}/${formData.serial_number}`;
+data.qr_code = await QRCode.toDataURL(qrUrl);
+
 
 
       console.log("Generated QR:", data.qr_code);
