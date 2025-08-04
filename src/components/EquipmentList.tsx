@@ -1,12 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { QrCode, Eye, Trash2 } from "lucide-react";
+import { QrCode, Eye, Trash2, Grid3X3, List, ArrowUpDown } from "lucide-react";
 import { QRCodeDialog } from "./QRCodeDialog";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import QRCode from "qrcode";
 
 interface Equipment {
@@ -31,7 +32,17 @@ interface EquipmentListProps {
 export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }: EquipmentListProps) => {
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const { toast } = useToast();
+
+  const sortedEquipment = useMemo(() => {
+    return [...equipment].sort((a, b) => {
+      const dateA = new Date(a.created_at);
+      const dateB = new Date(b.created_at);
+      return sortOrder === "newest" ? dateB.getTime() - dateA.getTime() : dateA.getTime() - dateB.getTime();
+    });
+  }, [equipment, sortOrder]);
 
   const handleGenerateQR = async (item: Equipment) => {
     try {
@@ -147,10 +158,48 @@ export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }:
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {equipment.map((item) => (
-          <Card key={item.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
+      {/* View Controls */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant={viewMode === "grid" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <Select value={sortOrder} onValueChange={(value: "newest" | "oldest") => setSortOrder(value)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Recently Added</SelectItem>
+              <SelectItem value="oldest">Oldest Added</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className={
+        viewMode === "grid" 
+          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+          : "space-y-4"
+      }>
+        {sortedEquipment.map((item) => (
+          <Card key={item.id} className={`hover:shadow-lg transition-shadow ${
+            viewMode === "list" ? "flex flex-row" : ""
+          }`}>
+            <CardHeader className={viewMode === "list" ? "flex-shrink-0" : ""}>
               <div className="flex justify-between items-start">
                 <div>
                   <CardTitle className="text-lg">{item.serial_number}</CardTitle>
@@ -160,61 +209,106 @@ export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }:
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {getSpecifications(item)}
-               {item.qr_code && (
-                <img
-                  src={item.qr_code}
-                  alt="QR Code"
-                  className="w-36 h-36 object-contain border rounded"
-                  />
-                )}
-
-
-                
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleGenerateQR(item)}
-                    className="flex-1"
-                  >
-                    <QrCode className="h-4 w-4 mr-2" />
-                    QR Code
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleViewDetails(item)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  {type !== "motors" && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="outline">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete {item.serial_number}? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(item)}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+            <CardContent className={`${viewMode === "list" ? "flex-1 flex items-center justify-between" : ""}`}>
+              {viewMode === "grid" ? (
+                <div className="space-y-4">
+                  {getSpecifications(item)}
+                  {item.qr_code && (
+                    <img
+                      src={item.qr_code}
+                      alt="QR Code"
+                      className="w-36 h-36 object-contain border rounded"
+                    />
                   )}
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleGenerateQR(item)}
+                      className="flex-1"
+                    >
+                      <QrCode className="h-4 w-4 mr-2" />
+                      QR Code
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleViewDetails(item)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    {type !== "motors" && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete {item.serial_number}? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(item)}>
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex-1">
+                    {getSpecifications(item)}
+                  </div>
+                  <div className="flex gap-2 ml-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleGenerateQR(item)}
+                    >
+                      <QrCode className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleViewDetails(item)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    {type !== "motors" && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete {item.serial_number}? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(item)}>
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
