@@ -26,61 +26,40 @@ interface QRCodeDialogProps {
 export const QRCodeDialog = ({ open, onOpenChange, equipment, type }: QRCodeDialogProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [qrUrl, setQrUrl] = useState("");
+  const [qrImageSrc, setQrImageSrc] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
-    if (equipment && canvasRef.current) {
+    if (equipment) {
       const url = `${window.location.origin}/equipment/${type}/${equipment.id}`;
       setQrUrl(url);
       
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) return;
-      
-      // Set canvas size
-      canvas.width = 300;
-      canvas.height = 300;
-      
       if (equipment.qr_code) {
-        // Use stored QR code (data URL)
-        const img = new Image();
-        img.onload = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, 300, 300);
-        };
-        img.onerror = () => {
-          console.error('Failed to load stored QR code, generating new one');
-          // Fallback to generating new QR code
-          QRCode.toCanvas(canvas, url, {
-            width: 300,
-            margin: 2,
-            color: {
-              dark: '#000000',
-              light: '#FFFFFF'
-            }
-          });
-        };
-        img.src = equipment.qr_code;
+        // Use stored QR code directly as image source
+        setQrImageSrc(equipment.qr_code);
       } else {
-        // Generate new QR code
-        QRCode.toCanvas(canvas, url, {
+        // Generate new QR code and store as data URL
+        QRCode.toDataURL(url, {
           width: 300,
           margin: 2,
           color: {
             dark: '#000000',
             light: '#FFFFFF'
           }
+        }).then(dataUrl => {
+          setQrImageSrc(dataUrl);
+        }).catch(error => {
+          console.error('Error generating QR code:', error);
         });
       }
     }
   }, [equipment, type]);
 
   const handleDownload = () => {
-    if (canvasRef.current && equipment) {
+    if (qrImageSrc && equipment) {
       const link = document.createElement('a');
       link.download = `${equipment.serial_number}-qr-code.png`;
-      link.href = canvasRef.current.toDataURL();
+      link.href = qrImageSrc;
       link.click();
       
       toast({
@@ -124,7 +103,9 @@ export const QRCodeDialog = ({ open, onOpenChange, equipment, type }: QRCodeDial
         
         <div className="flex flex-col items-center space-y-4">
           <div className="p-4 bg-white rounded-lg">
-            <canvas ref={canvasRef} />
+            {qrImageSrc && (
+              <img src={qrImageSrc} alt="QR Code" className="w-[300px] h-[300px]" />
+            )}
           </div>
           
           <div className="text-sm text-muted-foreground text-center">
