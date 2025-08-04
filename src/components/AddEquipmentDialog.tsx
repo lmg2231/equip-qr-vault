@@ -46,19 +46,36 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
       } else if (equipmentType === "pumps") {
         data.rpm = parseInt(formData.rpm);
       }
+          ...data,
+          type: equipmentType
+      };
 
- 	  const qrUrl = `${window.location.origin}/equipment/${equipmentType}/${formData.id}`;
-	  data.qr_code = await QRCode.toDataURL(qrUrl);
 
-
-      console.log("Generated QR:", data.qr_code);
       console.log("Final insert payload:", data);
 
-      const { error, data: response } = await supabase.from(equipmentType).insert([data]);
+      // Step 1: Insert without QR
+      const { data: insertData, error } = await supabase
+        .from(equipmentType)
+        .insert([data])
+        .select();
+
+      if (error) throw error;
+
+      const newItem = insertData?.[0];
+      if (!newItem) throw new Error("Could not retrieve inserted row");
+
+      const qrUrl = `${window.location.origin}/equipment/${equipmentType}/${newItem.id}`;
+      const qrCode = await QRCode.toDataURL(qrUrl);
+
+      // Step 2: Update QR code into the row
+      await supabase
+        .from(equipmentType)
+        .update({ qr_code: qrCode })
+        .eq("id", newItem.id);
+
       console.log("Insert response:", response);
 
 
-      if (error) throw error;
 
       toast({
         title: "Success",
