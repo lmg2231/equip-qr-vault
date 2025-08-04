@@ -20,8 +20,6 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
     location: "",
     hp: "",
     rpm: "",
-    reduction_ratio: "",
-    shaft_diameter: "",
   });
   const [equipmentType, setEquipmentType] = useState<"motors" | "gearboxes" | "pumps">("motors");
   const [loading, setLoading] = useState(false);
@@ -31,53 +29,39 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
     e.preventDefault();
     setLoading(true);
     try {
-      // Build explicit insert object (no spread)
-      const base = {
-        serial_number: formData.serial_number,
-        location: formData.location,
-        type: equipmentType,
-      };
-      let dataToInsert: any = { ...base };
-      if (equipmentType === "motors") {
-        dataToInsert.hp = parseFloat(formData.hp);
-        dataToInsert.rpm = parseInt(formData.rpm, 10);
-      } else if (equipmentType === "gearboxes") {
-        dataToInsert.reduction_ratio = formData.reduction_ratio;
-        dataToInsert.shaft_diameter = parseFloat(formData.shaft_diameter);
-      } else if (equipmentType === "pumps") {
-        dataToInsert.rpm = parseInt(formData.rpm, 10);
-      }
-
-      // Step 1: Insert without QR
+      // Step 1: Insert without QR code
       const { data: insertData, error: insertError } = await supabase
         .from(equipmentType)
-        .insert([dataToInsert])
-        .select()
-        .single();
+        .insert([
+          {
+            serial_number: formData.serial_number,
+            location: formData.location,
+            hp: equipmentType === 'motors' ? parseFloat(formData.hp) : null,
+            rpm: parseInt(formData.rpm),
+            type: equipmentType,
+          }
+        ])
+        .select();
       if (insertError) throw insertError;
-      const newItem = insertData;
-      if (!newItem || !newItem.id) throw new Error("Failed to retrieve inserted ID");
+      const newItem = insertData?.[0];
+      if (!newItem) throw new Error("Could not retrieve inserted row");
 
-      // Generate QR linking to the detail page
+      // Generate QR code URL and image
       const qrUrl = `${window.location.origin}/equipment/${equipmentType}/${newItem.id}`;
-      const qrImageData = await QRCode.toDataURL(qrUrl);
+      const qrCode = await QRCode.toDataURL(qrUrl);
 
-      // Step 2: Update the inserted row with QR
+      // Step 2: Update the row with QR code
       const { error: updateError } = await supabase
         .from(equipmentType)
-        .update({ qr_code: qrImageData })
+        .update({ qr_code: qrCode })
         .eq("id", newItem.id);
       if (updateError) throw updateError;
 
-      // Success flow
+      toast({ title: "Success", description: "Equipment added with QR code" });
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -88,13 +72,12 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add New Equipment</DialogTitle>
-          <DialogDescription>
-            Fill in the details to add a new piece of equipment.
-          </DialogDescription>
+          <DialogDescription>Enter equipment details below.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label>Type</n            <Select onValueChange={(val) => setEquipmentType(val as any)}>
+            <Label>Type</Label>
+            <Select onValueChange={(val) => setEquipmentType(val as any)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
@@ -105,6 +88,7 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
               </SelectContent>
             </Select>
           </div>
+
           <div>
             <Label>Serial Number</Label>
             <Input
@@ -114,6 +98,7 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
               required
             />
           </div>
+
           <div>
             <Label>Location</Label>
             <Input
@@ -123,25 +108,43 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
               required
             />
           </div>
-          {equipmentType === "motors" && (
-            <> ... motor fields ... </>
+
+          {equipmentType === 'motors' && (
+            <div>
+              <Label>HP</Label>
+              <Input
+                type="number"
+                value={formData.hp}
+                onChange={(e) => setFormData({ ...formData, hp: e.target.value })}
+                placeholder="Enter horsepower"
+                required
+              />
+            </div>
           )}
-          {equipmentType === "gearboxes" && (
-            <> ... gearbox fields ... </>
+
+          {equipmentType !== 'gearboxes' && (
+            <div>
+              <Label>RPM</Label>
+              <Input
+                type="number"
+                value={formData.rpm}
+                onChange={(e) => setFormData({ ...formData, rpm: e.target.value })}
+                placeholder="Enter RPM"
+                required
+              />
+            </div>
           )}
-          {equipmentType === "pumps" && (
-            <> ... pump fields ... </>
-          )}
+
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Adding..." : "Add Equipment"}
+              {loading ? 'Adding...' : 'Add Equipment'}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
   );
-}
+};
