@@ -44,21 +44,19 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
         data.reduction_ratio = formData.reduction_ratio;
         data.shaft_diameter = parseFloat(formData.shaft_diameter);
       } else if (equipmentType === "pumps") {
-        const dataToInsert = {
-          serial_number: formData.serial_number,
-          location: formData.location,
-          hp: parseInt(formData.hp),
-          rpm: parseInt(formData.rpm),
-          type: equipmentType,
-          qr_code: qrImageData,
+        data.rpm = parseInt(formData.rpm);
+      }
+          ...data,
+          type: equipmentType
       };
+
 
       console.log("Final insert payload:", data);
 
       // Step 1: Insert without QR
-      const { data: insertData, error } = await supabase
+      const { dataToInsert: insertData, error } = await supabase
         .from(equipmentType)
-        .insert([data])
+        .insert([dataToInsert])
         .select();
 
       if (error) throw error;
@@ -93,23 +91,7 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
         reduction_ratio: "",
         shaft_diameter: "",
       });
-
-     try {
-  const { data, error } = await supabase.from(equipmentType).insert([dataToInsert]).select().single();
-
-  if (error) throw error;
-
-  const id = data.id;
-  const qrUrl = `${window.location.origin}/equipment/${equipmentType}/${id}`;
-  const qrImageData = await QRCode.toDataURL(qrUrl);
-
-  // Update with QR
-  const { error: updateError } = await supabase
-    .from(equipmentType)
-    .update({ qr_code: qrImageData })
-    .eq("id", id);
-
-  if (updateError) throw updateError;   
+      
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
