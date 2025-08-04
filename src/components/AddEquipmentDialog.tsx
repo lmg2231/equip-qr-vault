@@ -93,7 +93,23 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
         reduction_ratio: "",
         shaft_diameter: "",
       });
-      
+
+     try {
+  const { data, error } = await supabase.from(equipmentType).insert([dataToInsert]).select().single();
+
+  if (error) throw error;
+
+  const id = data.id;
+  const qrUrl = `${window.location.origin}/equipment/${equipmentType}/${id}`;
+  const qrImageData = await QRCode.toDataURL(qrUrl);
+
+  // Update with QR
+  const { error: updateError } = await supabase
+    .from(equipmentType)
+    .update({ qr_code: qrImageData })
+    .eq("id", id);
+
+  if (updateError) throw updateError;   
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
