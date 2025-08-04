@@ -47,7 +47,7 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
         data.rpm = parseInt(formData.rpm);
       }
 
- 	  const qrUrl = `${window.location.origin}/equipment/${equipmentType}/${formData.serial_number}`;
+ 	  const qrUrl = `${window.location.origin}/equipment/${equipmentType}/${formData.id}`;
 	  data.qr_code = await QRCode.toDataURL(qrUrl);
 
 
