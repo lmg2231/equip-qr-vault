@@ -47,20 +47,17 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
         data.rpm = parseInt(formData.rpm);
       }
 
- 	  const qrUrl = `${window.location.origin}/equipment/${equipmentType}/$				  {formData.serial_number
-
-      }`;
-	  data.qr_code = await QRCode.toDataURL(qrUrl);
-
-
-      console.log("Generated QR:", data.qr_code);
-      console.log("Final insert payload:", data);
-
-      const { error, data: response } = await supabase.from(equipmentType).insert([data]);
-      console.log("Insert response:", response);
-
-
+      const { error, data: response } = await supabase.from(equipmentType).insert([data]).select();
+      
       if (error) throw error;
+      
+      // Generate QR code with the actual database ID
+      const insertedItem = response[0];
+      const qrUrl = `${window.location.origin}/equipment/${equipmentType}/${insertedItem.id}`;
+      const qrCode = await QRCode.toDataURL(qrUrl);
+      
+      // Update the record with the QR code
+      await supabase.from(equipmentType).update({ qr_code: qrCode }).eq('id', insertedItem.id);
 
       toast({
         title: "Success",
