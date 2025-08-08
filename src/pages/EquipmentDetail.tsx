@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,23 @@ const EquipmentDetail = () => {
     enabled: !!type && !!id,
   });
 
+  const { data: history } = useQuery({
+    queryKey: ["status-history", type, id],
+    queryFn: async () => {
+      if (!type || !id) return [] as any[];
+      const tableName = type as 'motors' | 'gearboxes' | 'pumps';
+      const { data, error } = await supabase
+        .from('equipment_status_history')
+        .select('*')
+        .eq('equipment_type', tableName)
+        .eq('equipment_id', id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!type && !!id,
+  });
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -64,6 +81,12 @@ const EquipmentDetail = () => {
       default: return 'bg-muted-foreground';
     }
   };
+
+  useEffect(() => {
+    if (equipment && type) {
+      document.title = `${formatStatus((equipment as any).status)} ${type.slice(0, -1)} - ${equipment.serial_number}`;
+    }
+  }, [equipment, type]);
 
   const handleChangeStatus = async () => {
     if (!type || !id || !equipment) return;
@@ -285,7 +308,73 @@ const EquipmentDetail = () => {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Status History</CardTitle>
+              <CardDescription>Recent changes with reasons</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {(!history || (history as any[]).length === 0) ? (
+                <p className="text-sm text-muted-foreground">No status changes yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {(history as any[]).map((h: any) => (
+                    <div key={h.id} className="flex items-start justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{formatStatus(h.from_status)} → {formatStatus(h.to_status)}</p>
+                        {h.reason && <p className="text-sm text-muted-foreground mt-1">Reason: {h.reason}</p>}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{format(new Date(h.created_at), 'MMM dd, yyyy HH:mm')}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
+        <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Change status</DialogTitle>
+              <DialogDescription>
+                Set a new status. Reasons are required for For Repair and Defunct. In Storage sets location to "Storage".
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>New status</Label>
+                <Select value={newStatus} onValueChange={setNewStatus} disabled={(equipment as any).status === 'defunct'}>
+                  <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active" disabled={(equipment as any).status === 'active'}>Active</SelectItem>
+                    <SelectItem value="in_storage" disabled={(equipment as any).status === 'in_storage'}>In storage</SelectItem>
+                    <SelectItem value="for_repair" disabled={(equipment as any).status === 'for_repair'}>For repair</SelectItem>
+                    <SelectItem value="defunct" disabled={(equipment as any).status === 'defunct'}>Defunct</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {(((equipment as any).status === 'active') && newStatus === 'for_repair') || newStatus === 'defunct' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="reason">Reason</Label>
+                  <Textarea id="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Enter reason" />
+                </div>
+              ) : null}
+
+              {((equipment as any).status === 'in_storage') && newStatus === 'active' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="newLocation">New location</Label>
+                  <Input id="newLocation" value={newLocation} onChange={(e) => setNewLocation(e.target.value)} placeholder="Where will this be used?" />
+                </div>
+              ) : null}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleChangeStatus} disabled={(equipment as any).status === 'defunct'}>Update</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
