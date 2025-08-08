@@ -131,6 +131,11 @@ const EquipmentDetail = () => {
     }
 
     const updates: Record<string, any> = { status: target };
+
+    /* OPTIMISTIC UPDATE START */
+    const optimistic = { ...(equipment as any), ...updates };
+    queryClient.setQueryData(['equipment', type, id], optimistic);
+    /* OPTIMISTIC UPDATE END */
     // Location side-effects
     if (target === 'in_storage') updates.location = 'Storage';
 
@@ -149,8 +154,15 @@ const EquipmentDetail = () => {
       updates.location = newLocation.trim();
     }
 
-    const { error: updError } = await supabase.from(tableName).update(updates).eq('id', id);
+    const { data: updData, error: updError } = await supabase.from(tableName)
+      .update(updates)
+      .eq('id', id)
+      .select('*')
+      .single();
     if (updError) {
+      // Revert optimistic cache on error
+      queryClient.setQueryData(['equipment', type, id], equipment);
+
       toast({ title: 'Error', description: updError.message, variant: 'destructive' });
       return;
     }
@@ -161,15 +173,22 @@ const EquipmentDetail = () => {
     setNewStatus("");
     setReason("");
     setNewLocation("");
-    queryClient.invalidateQueries({ queryKey: ['equipment', type, id] });
-    queryClient.invalidateQueries({ queryKey: ['status-history', type, id] });
+    await queryClient.invalidateQueries({ queryKey: ['equipment', type, id] });
+    await queryClient.refetchQueries({ queryKey: ['equipment', type, id] });
+    await queryClient.invalidateQueries({ queryKey: ['status-history', type, id] });
+    await queryClient.refetchQueries({ queryKey: ['status-history', type, id] });
 
-    // Force-refresh the equipment data immediately
+    /* FORCE REFRESH BLOCK */
+    // Also fetch directly from DB and push into cache
     const { data: fresh, error: refetchErr } = await supabase
       .from(tableName)
       .select('*')
       .eq('id', id)
       .single();
+
+    if (updData) {
+      queryClient.setQueryData(['equipment', type, id], updData);
+    }
 
     if (!refetchErr && fresh) {
       queryClient.setQueryData(['equipment', type, id], fresh);
