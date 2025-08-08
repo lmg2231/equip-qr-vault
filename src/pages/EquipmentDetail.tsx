@@ -116,13 +116,14 @@ const EquipmentDetail = () => {
 
     // Write history first
     const { error: histError } = await supabase.from('equipment_status_history').insert([
-      {
+      ({
         equipment_type: tableName,
         equipment_id: id,
         from_status: equipment.status,
         to_status: target,
         reason: reason.trim() || null,
-      },
+        active_location: (equipment.status === 'active' ? (equipment as any).location : null),
+      } as any),
     ]);
     if (histError) {
       toast({ title: 'Error', description: histError.message, variant: 'destructive' });
@@ -130,8 +131,23 @@ const EquipmentDetail = () => {
     }
 
     const updates: Record<string, any> = { status: target };
+    // Location side-effects
     if (target === 'in_storage') updates.location = 'Storage';
-    if (target === 'active' && equipment.status === 'in_storage') updates.location = newLocation.trim();
+
+    // When leaving Active, reflect status in location for clarity
+    if (equipment.status === 'active' && target !== 'active') {
+      if (target === 'for_repair') updates.location = 'For Repair';
+      if (target === 'defunct') updates.location = 'Defunct';
+    }
+
+    // When switching to Active from any non-active state, require new location
+    if (target === 'active' && equipment.status !== 'active') {
+      if (!newLocation.trim()) {
+        toast({ title: 'Location required', description: 'Provide a new location for Active status.' });
+        return;
+      }
+      updates.location = newLocation.trim();
+    }
 
     const { error: updError } = await supabase.from(tableName).update(updates).eq('id', id);
     if (updError) {
@@ -146,6 +162,7 @@ const EquipmentDetail = () => {
     setReason("");
     setNewLocation("");
     queryClient.invalidateQueries({ queryKey: ['equipment', type, id] });
+    queryClient.invalidateQueries({ queryKey: ['status-history', type, id] });
   };
 
   if (isLoading) {
