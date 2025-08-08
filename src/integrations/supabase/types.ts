@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      equipment_status_history: {
+        Row: {
+          created_at: string
+          equipment_id: string
+          equipment_type: string
+          from_status: Database["public"]["Enums"]["status_enum"]
+          id: string
+          reason: string | null
+          to_status: Database["public"]["Enums"]["status_enum"]
+        }
+        Insert: {
+          created_at?: string
+          equipment_id: string
+          equipment_type: string
+          from_status: Database["public"]["Enums"]["status_enum"]
+          id?: string
+          reason?: string | null
+          to_status: Database["public"]["Enums"]["status_enum"]
+        }
+        Update: {
+          created_at?: string
+          equipment_id?: string
+          equipment_type?: string
+          from_status?: Database["public"]["Enums"]["status_enum"]
+          id?: string
+          reason?: string | null
+          to_status?: Database["public"]["Enums"]["status_enum"]
+        }
+        Relationships: []
+      }
       gearboxes: {
         Row: {
           created_at: string
@@ -23,6 +53,7 @@ export type Database = {
           reduction_ratio: string
           serial_number: string
           shaft_diameter: number
+          status: Database["public"]["Enums"]["status_enum"]
           updated_at: string
         }
         Insert: {
@@ -33,6 +64,7 @@ export type Database = {
           reduction_ratio: string
           serial_number: string
           shaft_diameter: number
+          status?: Database["public"]["Enums"]["status_enum"]
           updated_at?: string
         }
         Update: {
@@ -43,6 +75,7 @@ export type Database = {
           reduction_ratio?: string
           serial_number?: string
           shaft_diameter?: number
+          status?: Database["public"]["Enums"]["status_enum"]
           updated_at?: string
         }
         Relationships: []
@@ -56,6 +89,7 @@ export type Database = {
           qr_code: string | null
           rpm: number
           serial_number: string
+          status: Database["public"]["Enums"]["status_enum"]
           updated_at: string
         }
         Insert: {
@@ -66,6 +100,7 @@ export type Database = {
           qr_code?: string | null
           rpm: number
           serial_number: string
+          status?: Database["public"]["Enums"]["status_enum"]
           updated_at?: string
         }
         Update: {
@@ -76,6 +111,7 @@ export type Database = {
           qr_code?: string | null
           rpm?: number
           serial_number?: string
+          status?: Database["public"]["Enums"]["status_enum"]
           updated_at?: string
         }
         Relationships: []
@@ -88,6 +124,7 @@ export type Database = {
           qr_code: string | null
           rpm: number
           serial_number: string
+          status: Database["public"]["Enums"]["status_enum"]
           updated_at: string
         }
         Insert: {
@@ -97,6 +134,7 @@ export type Database = {
           qr_code?: string | null
           rpm: number
           serial_number: string
+          status?: Database["public"]["Enums"]["status_enum"]
           updated_at?: string
         }
         Update: {
@@ -106,6 +144,7 @@ export type Database = {
           qr_code?: string | null
           rpm?: number
           serial_number?: string
+          status?: Database["public"]["Enums"]["status_enum"]
           updated_at?: string
         }
         Relationships: []
@@ -118,7 +157,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      status_enum: "active" | "in_storage" | "for_repair" | "defunct"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -245,6 +284,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      status_enum: ["active", "in_storage", "for_repair", "defunct"],
+    },
   },
 } as const
