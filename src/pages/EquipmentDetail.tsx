@@ -163,6 +163,17 @@ const EquipmentDetail = () => {
     setNewLocation("");
     queryClient.invalidateQueries({ queryKey: ['equipment', type, id] });
     queryClient.invalidateQueries({ queryKey: ['status-history', type, id] });
+
+    // Force-refresh the equipment data immediately
+    const { data: fresh, error: refetchErr } = await supabase
+      .from(tableName)
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (!refetchErr && fresh) {
+      queryClient.setQueryData(['equipment', type, id], fresh);
+    }
   };
 
   if (isLoading) {
