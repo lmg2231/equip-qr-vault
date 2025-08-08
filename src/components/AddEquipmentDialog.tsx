@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import QRCode from "qrcode";
@@ -23,7 +24,8 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
     rpm: "",
     reduction_ratio: "",
     shaft_diameter: "",
-  });
+});
+  const [inStorage, setInStorage] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -32,9 +34,11 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
     setLoading(true);
 
     try {
+      const finalLocation = inStorage ? "Storage" : formData.location;
       let data: any = {
         serial_number: formData.serial_number,
-        location: formData.location,
+        location: finalLocation,
+        status: inStorage ? 'in_storage' : 'active',
       };
 
       if (equipmentType === "motors") {
@@ -96,6 +100,7 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
       reduction_ratio: "",
       shaft_diameter: "",
     });
+    setInStorage(false);
   };
 
   return (
@@ -141,12 +146,26 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="location">Location</Label>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="in_storage"
+                  checked={inStorage}
+                  onCheckedChange={(checked) => {
+                    setInStorage(checked);
+                    setFormData({ ...formData, location: checked ? "Storage" : "" });
+                  }}
+                />
+                <Label htmlFor="in_storage" className="text-sm text-muted-foreground">In storage</Label>
+              </div>
+            </div>
             <Input
               id="location"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               placeholder="Where is this equipment used?"
+              disabled={inStorage}
               required
             />
           </div>
