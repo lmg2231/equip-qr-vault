@@ -75,9 +75,9 @@ const EquipmentDetail = () => {
   const statusDotClass = (s?: string) => {
     switch (s) {
       case 'active': return 'bg-green-500';
-      case 'in_storage': return 'bg-muted-foreground';
-      case 'for_repair': return 'bg-yellow-500';
-      case 'defunct': return 'bg-red-500';
+      case 'in_storage': return 'bg-yellow-500';
+      case 'for_repair': return 'bg-red-500';
+      case 'defunct': return 'bg-black';
       default: return 'bg-muted-foreground';
     }
   };
@@ -132,10 +132,6 @@ const EquipmentDetail = () => {
 
     const updates: Record<string, any> = { status: target };
 
-    /* OPTIMISTIC UPDATE START */
-    const optimistic = { ...(equipment as any), ...updates };
-    queryClient.setQueryData(['equipment', type, id], optimistic);
-    /* OPTIMISTIC UPDATE END */
     // Location side-effects
     if (target === 'in_storage') updates.location = 'Storage';
 
@@ -153,6 +149,11 @@ const EquipmentDetail = () => {
       }
       updates.location = newLocation.trim();
     }
+
+    /* OPTIMISTIC UPDATE START */
+    const optimistic = { ...(equipment as any), ...updates };
+    queryClient.setQueryData(['equipment', type, id], optimistic);
+    /* OPTIMISTIC UPDATE END */
 
     const { data: updData, error: updError } = await supabase.from(tableName)
       .update(updates)
@@ -371,6 +372,7 @@ const EquipmentDetail = () => {
                       <div>
                         <p className="font-medium">{formatStatus(h.from_status)} → {formatStatus(h.to_status)}</p>
                         {h.reason && <p className="text-sm text-muted-foreground mt-1">Reason: {h.reason}</p>}
+                        {h.active_location && <p className="text-sm text-muted-foreground mt-1">From location: {h.active_location}</p>}
                       </div>
                       <p className="text-sm text-muted-foreground">{format(new Date(h.created_at), 'MMM dd, yyyy HH:mm')}</p>
                     </div>
