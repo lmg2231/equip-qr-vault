@@ -49,10 +49,10 @@ export const EquipmentFilters = ({ equipment, onFilterChange }: EquipmentFilters
     onFilterChange(filtered);
   };
 
-  // Automatically apply filters when selections change
+  // Apply filters when selections change, but not when equipment changes to avoid infinite loop
   useEffect(() => {
     applyFilters();
-  }, [selectedLocations, selectedHp, selectedRpm, equipment]);
+  }, [selectedLocations, selectedHp, selectedRpm]);
 
   const clearFilters = () => {
     setSelectedLocations([]);
