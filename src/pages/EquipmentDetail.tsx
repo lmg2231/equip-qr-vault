@@ -134,11 +134,11 @@ const EquipmentDetail = () => {
 
     // Location side-effects
     if (target === 'in_storage') updates.location = 'Storage';
+    if (target === 'defunct') updates.location = 'Defunct';
 
-    // When leaving Active, reflect status in location for clarity
-    if (equipment.status === 'active' && target !== 'active') {
+    // When leaving Active, reflect status in location for clarity (except for defunct which is handled above)
+    if (equipment.status === 'active' && target !== 'active' && target !== 'defunct') {
       if (target === 'for_repair') updates.location = 'For Repair';
-      if (target === 'defunct') updates.location = 'Defunct';
     }
 
     // When switching to Active from any non-active state, require new location
