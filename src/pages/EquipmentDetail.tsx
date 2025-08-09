@@ -30,7 +30,7 @@ const EquipmentDetail = () => {
         .from(tableName)
         .select("*")
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -159,7 +159,7 @@ const EquipmentDetail = () => {
       .update(updates)
       .eq('id', id)
       .select('*')
-      .single();
+      .maybeSingle();
     if (updError) {
       // Revert optimistic cache on error
       queryClient.setQueryData(['equipment', type, id], equipment);
@@ -185,7 +185,7 @@ const EquipmentDetail = () => {
       .from(tableName)
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (updData) {
       queryClient.setQueryData(['equipment', type, id], updData);
