@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       equipment_status_history: {
         Row: {
+          active_location: string | null
           created_at: string
           equipment_id: string
           equipment_type: string
@@ -25,6 +26,7 @@ export type Database = {
           to_status: Database["public"]["Enums"]["status_enum"]
         }
         Insert: {
+          active_location?: string | null
           created_at?: string
           equipment_id: string
           equipment_type: string
@@ -34,6 +36,7 @@ export type Database = {
           to_status: Database["public"]["Enums"]["status_enum"]
         }
         Update: {
+          active_location?: string | null
           created_at?: string
           equipment_id?: string
           equipment_type?: string
