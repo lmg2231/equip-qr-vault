@@ -301,7 +301,7 @@ const EquipmentDetail = () => {
                   <div>
                     <CardTitle className="text-2xl">{equipment.serial_number}</CardTitle>
                     <CardDescription className="text-base mt-1">
-                      {type.charAt(0).toUpperCase() + type.slice(1, -1)} Details
+                      {type.charAt(0).toUpperCase() + (type.endsWith('es') ? type.slice(1, -2) : type.slice(1, -1))} Details
                     </CardDescription>
                   </div>
                 </div>
