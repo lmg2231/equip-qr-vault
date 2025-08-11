@@ -238,29 +238,6 @@ export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }:
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    {type !== "motors" && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="outline">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete {item.serial_number}? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(item)}>
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
                   </div>
                 </div>
               ) : (
@@ -283,29 +260,6 @@ export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }:
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    {type !== "motors" && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="outline">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete {item.serial_number}? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(item)}>
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
                   </div>
                 </div>
               )}
