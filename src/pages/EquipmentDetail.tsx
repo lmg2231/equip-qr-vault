@@ -84,7 +84,7 @@ const EquipmentDetail = () => {
 
   useEffect(() => {
     if (equipment && type) {
-      document.title = `${formatStatus((equipment as any).status)} ${type.slice(0, -1)} - ${equipment.serial_number}`;
+      document.title = `${formatStatus((equipment as any).status)} ${type.endsWith('es') ? type.slice(0, -2) : type.slice(0, -1)} - ${equipment.serial_number}`;
     }
   }, [equipment, type]);
 
@@ -306,7 +306,7 @@ const EquipmentDetail = () => {
                   </div>
                 </div>
                 <Badge variant="secondary" className="text-sm">
-                  {type.charAt(0).toUpperCase() + type.slice(1, -1)}
+                  {type.charAt(0).toUpperCase() + (type.endsWith('es') ? type.slice(1, -2) : type.slice(1, -1))}
                 </Badge>
               </div>
             </CardHeader>
