@@ -1,3 +1,4 @@
+import { useEditorAccess } from "./EditorAccess";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -7,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import QRCode from "qrcode";
 
 interface AddEquipmentDialogProps {
   open: boolean;
@@ -16,6 +16,7 @@ interface AddEquipmentDialogProps {
 }
 
 export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipmentDialogProps) => {
+  const { canEdit } = useEditorAccess();
   const [equipmentType, setEquipmentType] = useState<"motors" | "gearboxes" | "pumps">("motors");
   const [formData, setFormData] = useState({
     serial_number: "",
@@ -31,6 +32,7 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canEdit || loading) return;
     setLoading(true);
 
     try {
@@ -51,18 +53,10 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
         data.rpm = parseInt(formData.rpm);
       }
 
-      const { error, data: response } = await supabase.from(equipmentType).insert([data]).select();
+      const { error } = await supabase.from(equipmentType).insert([data]).select();
       
       if (error) throw error;
       
-      // Generate QR code with the actual database ID
-      const insertedItem = response[0];
-      const qrUrl = `${window.location.origin}/equipment/${equipmentType}/${insertedItem.id}`;
-      const qrCode = await QRCode.toDataURL(qrUrl);
-      
-      // Update the record with the QR code
-      await supabase.from(equipmentType).update({ qr_code: qrCode }).eq('id', insertedItem.id);
-
       toast({
         title: "Success",
         description: `${equipmentType.slice(0, -1).charAt(0).toUpperCase() + equipmentType.slice(1, -1)} added successfully`,
@@ -243,7 +237,7 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !canEdit}>
               {loading ? "Adding..." : "Add Equipment"}
             </Button>
           </div>
@@ -252,3 +246,4 @@ export const AddEquipmentDialog = ({ open, onOpenChange, onSuccess }: AddEquipme
     </Dialog>
   );
 };
+

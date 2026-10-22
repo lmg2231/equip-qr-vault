@@ -1,3 +1,4 @@
+import { EditorAccess, useEditorAccess } from "@/components/EditorAccess";
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 const EquipmentDetail = () => {
+  const { canEdit } = useEditorAccess();
+  const [saving, setSaving] = useState(false);
   const { type, id } = useParams<{ type: string; id: string }>();
 
   const { data: equipment, isLoading, error } = useQuery({
@@ -89,111 +92,27 @@ const EquipmentDetail = () => {
   }, [equipment, type]);
 
   const handleChangeStatus = async () => {
-    if (!type || !id || !equipment) return;
-
-    if (equipment.status === 'defunct') {
-      toast({ title: 'Not allowed', description: 'Defunct equipment status cannot be changed.', variant: 'destructive' });
-      return;
-    }
-
-    const target = (newStatus || equipment.status) as 'active' | 'in_storage' | 'for_repair' | 'defunct';
-
-    // Validations
-    if (equipment.status === 'active' && target === 'for_repair' && !reason.trim()) {
-      toast({ title: 'Reason required', description: 'Provide a reason to move Active → For Repair.' });
-      return;
-    }
-    if (target === 'defunct' && !reason.trim()) {
-      toast({ title: 'Reason required', description: 'Provide a reason to mark as Defunct.' });
-      return;
-    }
-    if (target === 'active' && equipment.status === 'in_storage' && !newLocation.trim()) {
-      toast({ title: 'Location required', description: 'Provide a new location for Active status.' });
-      return;
-    }
-
-    const tableName = type as 'motors' | 'gearboxes' | 'pumps';
-
-    // Write history first
-    const { error: histError } = await supabase.from('equipment_status_history').insert([
-      ({
-        equipment_type: tableName,
-        equipment_id: id,
-        from_status: equipment.status,
-        to_status: target,
-        reason: reason.trim() || null,
-        active_location: (equipment.status === 'active' ? (equipment as any).location : null),
-      } as any),
-    ]);
-    if (histError) {
-      toast({ title: 'Error', description: histError.message, variant: 'destructive' });
-      return;
-    }
-
-    const updates: Record<string, any> = { status: target };
-
-    // Location side-effects
-    if (target === 'in_storage') updates.location = 'Storage';
-    if (target === 'defunct') updates.location = 'Defunct';
-
-    // When leaving Active, reflect status in location for clarity (except for defunct which is handled above)
-    if (equipment.status === 'active' && target !== 'active' && target !== 'defunct') {
-      if (target === 'for_repair') updates.location = 'For Repair';
-    }
-
-    // When switching to Active from any non-active state, require new location
-    if (target === 'active' && equipment.status !== 'active') {
-      if (!newLocation.trim()) {
-        toast({ title: 'Location required', description: 'Provide a new location for Active status.' });
-        return;
-      }
-      updates.location = newLocation.trim();
-    }
-
-    /* OPTIMISTIC UPDATE START */
-    const optimistic = { ...(equipment as any), ...updates };
-    queryClient.setQueryData(['equipment', type, id], optimistic);
-    /* OPTIMISTIC UPDATE END */
-
-    const { data: updData, error: updError } = await supabase.from(tableName)
-      .update(updates)
-      .eq('id', id)
-      .select('*')
-      .maybeSingle();
-    if (updError) {
-      // Revert optimistic cache on error
-      queryClient.setQueryData(['equipment', type, id], equipment);
-
-      toast({ title: 'Error', description: updError.message, variant: 'destructive' });
-      return;
-    }
-
-    toast({ title: 'Status updated' });
-
-    setStatusDialogOpen(false);
-    setNewStatus("");
-    setReason("");
-    setNewLocation("");
-    await queryClient.invalidateQueries({ queryKey: ['equipment', type, id] });
-    await queryClient.refetchQueries({ queryKey: ['equipment', type, id] });
-    await queryClient.invalidateQueries({ queryKey: ['status-history', type, id] });
-    await queryClient.refetchQueries({ queryKey: ['status-history', type, id] });
-
-    /* FORCE REFRESH BLOCK */
-    // Also fetch directly from DB and push into cache
-    const { data: fresh, error: refetchErr } = await supabase
-      .from(tableName)
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-
-    if (updData) {
-      queryClient.setQueryData(['equipment', type, id], updData);
-    }
-
-    if (!refetchErr && fresh) {
-      queryClient.setQueryData(['equipment', type, id], fresh);
-    }
+    if (!canEdit || saving || !type || !id || !equipment || !newStatus) return;
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.rpc('change_equipment_status', {
+        p_equipment_type: type,
+        p_equipment_id: id,
+        p_status: newStatus as 'active' | 'in_storage' | 'for_repair' | 'defunct',
+        p_reason: reason.trim() || null,
+        p_location: newLocation.trim() || null,
+      });
+      if (error) throw error;
+      if (!data) throw new Error('The equipment was not updated.');
+      queryClient.setQueryData(['equipment', type, id], data);
+      await queryClient.invalidateQueries({ queryKey: ['status-history', type, id] });
+      await queryClient.invalidateQueries({ queryKey: [type] });
+      toast({ title: 'Status updated' });
+      setStatusDialogOpen(false);
+      setNewStatus(''); setReason(''); setNewLocation('');
+    } catch (error) {
+      toast({ title: 'Update failed', description: error instanceof Error ? error.message : 'Check your staff access and the status details.', variant: 'destructive' });
+    } finally { setSaving(false); }
   };
 
   if (isLoading) {
@@ -281,6 +200,7 @@ const EquipmentDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6">
+        <div className="flex justify-end mb-4"><EditorAccess /></div>
         <div className="mb-6">
           <Button variant="outline" asChild className="mb-4">
             <Link to="/">
@@ -350,7 +270,7 @@ const EquipmentDetail = () => {
                         <p className="font-medium">{formatStatus((equipment as any).status)}</p>
                       </div>
                     </div>
-                    <Button size="sm" variant="outline" onClick={() => setStatusDialogOpen(true)}>Change status</Button>
+                    {canEdit && <Button size="sm" variant="outline" disabled={equipment.status === 'defunct'} onClick={() => setStatusDialogOpen(true)}>Change status</Button>}
                   </div>
                 </div>
               </div>
@@ -407,20 +327,20 @@ const EquipmentDetail = () => {
               {(((equipment as any).status === 'active') && newStatus === 'for_repair') || newStatus === 'defunct' ? (
                 <div className="space-y-2">
                   <Label htmlFor="reason">Reason</Label>
-                  <Textarea id="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Enter reason" />
+                  <Textarea maxLength={2000} id="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Enter reason" />
                 </div>
               ) : null}
 
-              {((equipment as any).status === 'in_storage') && newStatus === 'active' ? (
+              {equipment.status !== 'active' && newStatus === 'active' ? (
                 <div className="space-y-2">
                   <Label htmlFor="newLocation">New location</Label>
-                  <Input id="newLocation" value={newLocation} onChange={(e) => setNewLocation(e.target.value)} placeholder="Where will this be used?" />
+                  <Input maxLength={200} id="newLocation" value={newLocation} onChange={(e) => setNewLocation(e.target.value)} placeholder="Where will this be used?" />
                 </div>
               ) : null}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleChangeStatus} disabled={(equipment as any).status === 'defunct'}>Update</Button>
+              <Button onClick={handleChangeStatus} disabled={!canEdit || saving || !newStatus || equipment.status === 'defunct'}>{saving ? 'Updating…' : 'Update'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -430,3 +350,4 @@ const EquipmentDetail = () => {
 };
 
 export default EquipmentDetail;
+

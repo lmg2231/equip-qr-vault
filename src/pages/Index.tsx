@@ -1,3 +1,4 @@
+import { EditorAccess, useEditorAccess } from "@/components/EditorAccess";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  const { canEdit } = useEditorAccess();
   const [searchTerm, setSearchTerm] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [equipmentType, setEquipmentType] = useState<"motors" | "gearboxes" | "pumps">("motors");
@@ -78,10 +80,11 @@ const Index = () => {
           <div>
             <h1 className="text-4xl font-bold text-foreground">Equipment Manager</h1>
           </div>
-          <Button onClick={handleAddEquipment} className="flex items-center gap-2">
+          <div className="flex items-center gap-3"><EditorAccess />
+          {canEdit && <Button onClick={handleAddEquipment} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Add Equipment
-          </Button>
+          </Button>}</div>
         </div>
 
         {/* Search */}
