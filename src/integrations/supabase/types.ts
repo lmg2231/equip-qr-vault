@@ -157,7 +157,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_edit_equipment: { Args: Record<PropertyKey, never>; Returns: boolean }
+      change_equipment_status: {
+        Args: {
+          p_equipment_type: string
+          p_equipment_id: string
+          p_status: "active" | "in_storage" | "for_repair" | "defunct"
+          p_reason?: string | null
+          p_location?: string | null
+        }
+        Returns: Json
+      }
     }
     Enums: {
       status_enum: "active" | "in_storage" | "for_repair" | "defunct"
@@ -292,3 +302,4 @@ export const Constants = {
     },
   },
 } as const
+

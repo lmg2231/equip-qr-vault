@@ -1,14 +1,11 @@
+import { EquipmentQrImage } from "./EquipmentQrImage";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { QrCode, Eye, Trash2, Grid3X3, List, ArrowUpDown } from "lucide-react";
+import { QrCode, Eye, Grid3X3, List } from "lucide-react";
 import { QRCodeDialog } from "./QRCodeDialog";
 import { useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import QRCode from "qrcode";
 
 interface Equipment {
   id: string;
@@ -29,12 +26,11 @@ interface EquipmentListProps {
   isFiltered?: boolean;
 }
 
-export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }: EquipmentListProps) => {
+export const EquipmentList = ({ equipment, type, isFiltered = false }: EquipmentListProps) => {
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
-  const { toast } = useToast();
 
   const sortedEquipment = useMemo(() => {
     return [...equipment].sort((a, b) => {
@@ -44,71 +40,16 @@ export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }:
     });
   }, [equipment, sortOrder]);
 
-  const handleGenerateQR = async (item: Equipment) => {
-    try {
-      let qrCodeData = item.qr_code;
-      
-      if (!qrCodeData) {
-        // Generate QR code if it doesn't exist
-        const url = `${window.location.origin}/equipment/${type}/${item.id}`;
-        qrCodeData = await QRCode.toDataURL(url, {
-          width: 300,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        });
-        
-        // Save QR code to database
-        const { error } = await supabase
-          .from(type)
-          .update({ qr_code: qrCodeData })
-          .eq('id', item.id);
-          
-        if (error) {
-          console.error('Error saving QR code:', error);
-        } else {
-          item.qr_code = qrCodeData;
-        }
-      }
-      
-      setSelectedEquipment(item);
-      setQrDialogOpen(true);
-    } catch (error) {
-      console.error('Error generating QR code:', error);
-      toast({
-        title: "Error",
-        description: "Failed to generate QR code",
-        variant: "destructive",
-      });
-    }
+  const handleGenerateQR = (item: Equipment) => {
+    setSelectedEquipment(item);
+    setQrDialogOpen(true);
   };
 
   const handleViewDetails = (item: Equipment) => {
     const url = `${window.location.origin}/equipment/${type}/${item.id}`;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const handleDelete = async (item: Equipment) => {
-    try {
-      const { error } = await supabase.from(type).delete().eq('id', item.id);
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Equipment deleted successfully",
-      });
-      
-      onUpdate();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete equipment",
-        variant: "destructive",
-      });
-    }
-  };
 
   const getSpecifications = (item: Equipment) => {
     if (type === "motors") {
@@ -199,7 +140,7 @@ export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }:
           <Card key={item.id} className={`hover:shadow-lg transition-shadow ${
             viewMode === "list" ? "flex flex-row" : ""
           }`}>
-            <CardHeader className={viewMode === "list" ? "flex-shrink-0" : ""}>
+            <CardHeader className={viewMode === "list" ? "shrink-0" : ""}>
               <div className="flex justify-between items-start">
                 <div>
                   <CardTitle className="text-lg">{item.serial_number}</CardTitle>
@@ -213,13 +154,7 @@ export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }:
               {viewMode === "grid" ? (
                 <div className="space-y-4">
                   {getSpecifications(item)}
-                  {item.qr_code && (
-                    <img
-                      src={item.qr_code}
-                      alt="QR Code"
-                      className="w-36 h-36 object-contain border rounded"
-                    />
-                  )}
+                  <EquipmentQrImage id={item.id} type={type} />
                   
                   <div className="flex gap-2">
                     <Button
@@ -277,3 +212,4 @@ export const EquipmentList = ({ equipment, type, onUpdate, isFiltered = false }:
     </>
   );
 };
+

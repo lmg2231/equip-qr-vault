@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Copy, ExternalLink } from "lucide-react";
@@ -24,36 +24,26 @@ interface QRCodeDialogProps {
 }
 
 export const QRCodeDialog = ({ open, onOpenChange, equipment, type }: QRCodeDialogProps) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [qrUrl, setQrUrl] = useState("");
   const [qrImageSrc, setQrImageSrc] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
+    let cancelled = false;
+    setQrImageSrc('');
+    setQrUrl('');
     if (equipment) {
-      const url = `${window.location.origin}/equipment/${type}/${equipment.id}`;
+      const url = `${window.location.origin}/equipment/${type}/${encodeURIComponent(equipment.id)}`;
       setQrUrl(url);
-      
-      if (equipment.qr_code) {
-        // Use stored QR code directly as image source
-        setQrImageSrc(equipment.qr_code);
-      } else {
-        // Generate new QR code and store as data URL
-        QRCode.toDataURL(url, {
-          width: 300,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        }).then(dataUrl => {
-          setQrImageSrc(dataUrl);
-        }).catch(error => {
-          console.error('Error generating QR code:', error);
-        });
-      }
+      // Stored qr_code values are untrusted and may encode a different destination.
+      QRCode.toDataURL(url, { width: 300, margin: 2 }).then(dataUrl => {
+        if (!cancelled) setQrImageSrc(dataUrl);
+      }).catch(() => {
+        if (!cancelled) setQrImageSrc('');
+      });
     }
-  }, [equipment, type]);
+    return () => { cancelled = true; };
+  }, [equipment?.id, type]);
 
   const handleDownload = () => {
     if (qrImageSrc && equipment) {
@@ -86,7 +76,7 @@ export const QRCodeDialog = ({ open, onOpenChange, equipment, type }: QRCodeDial
   };
 
   const handleOpenUrl = () => {
-    window.open(qrUrl, '_blank');
+    window.open(qrUrl, '_blank', 'noopener,noreferrer');
   };
 
   if (!equipment) return null;

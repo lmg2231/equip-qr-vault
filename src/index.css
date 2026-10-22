@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.ts";
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
@@ -102,4 +101,15 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Preserve the original container sizing and v3 defaults during the security upgrade. */
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= 1400px) { max-width: 1400px; }
+}
+@layer base {
+  button, [role="button"] { cursor: pointer; }
+  input::placeholder, textarea::placeholder { color: #9ca3af; opacity: 1; }
 }
